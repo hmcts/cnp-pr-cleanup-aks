@@ -1,0 +1,124 @@
+---
+name: AKS Cleanup Preview
+trigger: none
+pr: none
+variables:
+  connectionType: 'Azure Resource Manager'
+  containerRegistry: 'hmctspublic'  # hmctssandbox
+  helmVersion: '3.2.4'
+  azureSubscription: DCD-CFTAPPS-DEV  # azurerm-sandbox
+  registrySubscription: azurerm-prod
+
+resources:
+  webhooks:
+    # Listens for webhook PR event from GitHub - filtered by closure only
+    - webhook: GithubPRClosed      
+      # Uses PR-Closure SC
+      connection: Github-PR-Closed
+      filters:    
+        - path: action
+          value: closed
+
+  repositories:
+    - repository: cnp-flux-config
+      type: github
+      ref: refs/heads/master
+      name: hmcts/cnp-flux-config
+      endpoint: 'hmcts'
+    - repository: sds-flux-config
+      type: github
+      ref: refs/heads/master
+      name: hmcts/sds-flux-config
+      endpoint: 'hmcts'
+jobs:
+  # Job to split labels and set them as job variables for use in folowing steps
+  - job: fetch_pr_labels
+    # variables:
+    #   # Assign label variable
+    #   pr_labels: '${{ convertToJson(parameters.GithubPRClosed.pull_request.labels) }}'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: Powershell@2
+      inputs:
+        filePath: scripts/pr-label-reader.ps1
+        arguments: -labels '${{ convertToJson(parameters.GithubPRClosed.pull_request.labels) }}'
+
+  - job: untag_acr_image
+    dependsOn: fetch_pr_labels
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: AzureCLI@1
+      displayName: 'Untag ACR image'
+      enabled: true
+      inputs:
+        azureSubscription: $(registrySubscription)
+        scriptLocation: scriptPath
+        scriptPath: scripts/untag-acr-image.sh
+        arguments: $(release_name) $(product) $(containerRegistry)
+
+  - job: delete_helm_release
+    dependsOn: fetch_pr_labels
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: HelmInstaller@1
+      displayName: 'Install Helm $(helmVersion)'
+      inputs:
+        helmVersionToInstall: $(helmVersion)
+
+    # Delete PR helm release after PR is closed
+    - task: AzureCLI@1
+      displayName: 'Helm Delete Release on preview 00'
+      inputs:
+        azureSubscription:  '$(azureSubscription)'
+        scriptLocation: scriptPath
+        scriptPath: scripts/delete-helm-release-on-pr-closure.sh
+        arguments: cft-preview-00-rg cft-preview-00-aks $(namespace) $(release_name)
+    - task: AzureCLI@1
+      displayName: 'Helm Delete Release preview 01'
+      inputs:
+        azureSubscription:  '$(azureSubscription)'
+        scriptLocation: scriptPath
+        scriptPath: scripts/delete-helm-release-on-pr-closure.sh
+        arguments: cft-preview-01-rg cft-preview-01-aks $(namespace) $(release_name)
+    - task: AzureCLI@1
+      displayName: 'Helm Delete Release on sds dev 00'
+      inputs:
+        azureSubscription:  'DTS-SHAREDSERVICES-DEV'
+        scriptLocation: scriptPath
+        scriptPath: scripts/delete-helm-release-on-pr-closure.sh
+        arguments: ss-dev-00-rg ss-dev-00-aks $(namespace) $(release_name)
+    - task: AzureCLI@1
+      displayName: 'Helm Delete Release sds dev 01'
+      inputs:
+        azureSubscription:  'DTS-SHAREDSERVICES-DEV'
+        scriptLocation: scriptPath
+        scriptPath: scripts/delete-helm-release-on-pr-closure.sh
+        arguments: ss-dev-01-rg ss-dev-01-aks $(namespace) $(release_name)
+
+  - job: remove_pr_image_policy
+    dependsOn: fetch_pr_labels
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+      - checkout: self
+      - checkout: cnp-flux-config
+      - checkout: sds-flux-config
+      - task: AzureKeyVault@1
+        displayName: 'Get secrets from Keyvault'
+        inputs:
+          azureSubscription:  "DTS-CFTPTL-INTSVC"
+          keyVaultName:   "cftptl-intsvc"
+          secretsFilter: 'github-management-api-token'
+      - task: Bash@3
+        displayName: 'CFT - Remove PR image policies'
+        inputs:
+          filePath: cnp-pr-cleanup-aks/scripts/fix-image-policies.sh
+          arguments: $(release_name) $(product) $(github-management-api-token)  cnp-flux-config
+      - task: Bash@3
+        displayName: 'SDS - Remove PR image policies'
+        inputs:
+          filePath: cnp-pr-cleanup-aks/scripts/fix-image-policies.sh
+          arguments: $(release_name) $(product) $(github-management-api-token) sds-flux-config
