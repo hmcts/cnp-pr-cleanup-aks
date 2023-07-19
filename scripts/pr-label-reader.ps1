@@ -33,9 +33,9 @@ if ($labels -ne "") {
     }
 
     # Write variables to be used by following tasks
-    Write-Host "##vso[task.setvariable variable=release_name]$releaseName"
-    Write-Host "##vso[task.setvariable variable=namespace]$namespace"
-    Write-Host "##vso[task.setvariable variable=product]$product"
+    Write-Host "##vso[task.setvariable variable=release_name;isOutput=true]$releaseName"
+    Write-Host "##vso[task.setvariable variable=namespace;isOutput=true]$namespace"
+    Write-Host "##vso[task.setvariable variable=product;isOutput=true]$product"
 
     Write-Output "Release Name: $releaseName"
     Write-Output "Namespace: $namespace"

@@ -33,19 +33,23 @@ resources:
 jobs:
   # Job to split labels and set them as job variables for use in folowing steps
   - job: fetch_pr_labels
-    # variables:
-    #   # Assign label variable
-    #   pr_labels: '${{ convertToJson(parameters.GithubPRClosed.pull_request.labels) }}'
+    variables:
+      # Assign URL variable
+      pr_url: '${{ parameters.GithubPRClosed.pull_request.url }}'
     pool:
       vmImage: 'ubuntu-latest'
     steps:
     - task: Powershell@2
       inputs:
         filePath: scripts/pr-label-reader.ps1
+        # convertToJson used for objects
         arguments: -labels '${{ convertToJson(parameters.GithubPRClosed.pull_request.labels) }}'
 
   - job: untag_acr_image
     dependsOn: fetch_pr_labels
+    variables:
+      release_name: $[ dependencies.fetch_pr_labels.outputs['release_name'] ]
+      product: $[ dependencies.fetch_pr_labels.outputs['product'] ]
     pool:
       vmImage: 'ubuntu-latest'
     steps:
@@ -60,6 +64,9 @@ jobs:
 
   - job: delete_helm_release
     dependsOn: fetch_pr_labels
+    variables:
+      release_name: $[ dependencies.fetch_pr_labels.outputs['release_name'] ]
+      product: $[ dependencies.fetch_pr_labels.outputs['product'] ]
     pool:
       vmImage: 'ubuntu-latest'
     steps:
@@ -100,6 +107,9 @@ jobs:
 
   - job: remove_pr_image_policy
     dependsOn: fetch_pr_labels
+    variables:
+      release_name: $[ dependencies.fetch_pr_labels.outputs['release_name'] ]
+      product: $[ dependencies.fetch_pr_labels.outputs['product'] ]
     pool:
       vmImage: 'ubuntu-latest'
     steps:
