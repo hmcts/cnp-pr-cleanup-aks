@@ -40,6 +40,7 @@ jobs:
       vmImage: 'ubuntu-latest'
     steps:
     - task: Powershell@2
+      name: prLabelReader
       inputs:
         filePath: scripts/pr-label-reader.ps1
         # convertToJson used for objects
@@ -48,8 +49,8 @@ jobs:
   - job: untag_acr_image
     dependsOn: fetch_pr_labels
     variables:
-      release_name: $[ dependencies.fetch_pr_labels.outputs['release_name'] ]
-      product: $[ dependencies.fetch_pr_labels.outputs['product'] ]
+      release_name: $[ dependencies.fetch_pr_labels.outputs['prLabelReader.release_name'] ]
+      product: $[ dependencies.fetch_pr_labels.outputs['prLabelReader.product'] ]
     pool:
       vmImage: 'ubuntu-latest'
     steps:
@@ -65,8 +66,8 @@ jobs:
   - job: delete_helm_release
     dependsOn: fetch_pr_labels
     variables:
-      release_name: $[ dependencies.fetch_pr_labels.outputs['release_name'] ]
-      product: $[ dependencies.fetch_pr_labels.outputs['product'] ]
+      release_name: $[ dependencies.fetch_pr_labels.outputs['prLabelReader.release_name'] ]
+      namespace: $[ dependencies.fetch_pr_labels.outputs['prLabelReader.namespace'] ]
     pool:
       vmImage: 'ubuntu-latest'
     steps:
@@ -108,8 +109,8 @@ jobs:
   - job: remove_pr_image_policy
     dependsOn: fetch_pr_labels
     variables:
-      release_name: $[ dependencies.fetch_pr_labels.outputs['release_name'] ]
-      product: $[ dependencies.fetch_pr_labels.outputs['product'] ]
+      release_name: $[ dependencies.fetch_pr_labels.outputs['prLabelReader.release_name'] ]
+      product: $[ dependencies.fetch_pr_labels.outputs['prLabelReader.product'] ]
     pool:
       vmImage: 'ubuntu-latest'
     steps:
