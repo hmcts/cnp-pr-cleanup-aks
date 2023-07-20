@@ -33,6 +33,9 @@ resources:
 jobs:
   # Job to split labels and set them as job variables for use in folowing steps
   - job: fetch_pr_labels
+    variables:
+      # Assign URL variable
+      pr_url: '${{ parameters.GithubPRClosed.pull_request.url }}'
     pool:
       vmImage: 'ubuntu-latest'
     steps:
@@ -103,11 +106,9 @@ jobs:
         scriptPath: scripts/delete-helm-release-on-pr-closure.sh
         arguments: ss-dev-01-rg ss-dev-01-aks $(namespace) $(release_name)
 
-  - job: remove_pr_image_policy_and_tags
+  - job: remove_pr_image_policy
     dependsOn: fetch_pr_labels
     variables:
-      release_name_label: $[ dependencies.fetch_pr_labels.outputs['prLabelReader.release_name_label'] ]
-      pr_url: '${{ parameters.GithubPRClosed.pull_request.url }}'
       release_name: $[ dependencies.fetch_pr_labels.outputs['prLabelReader.release_name'] ]
       product: $[ dependencies.fetch_pr_labels.outputs['prLabelReader.product'] ]
     pool:
