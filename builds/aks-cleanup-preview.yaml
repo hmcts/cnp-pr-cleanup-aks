@@ -33,9 +33,6 @@ resources:
 jobs:
   # Job to split labels and set them as job variables for use in folowing steps
   - job: fetch_pr_labels
-    variables:
-      # Assign URL variable
-      pr_url: '${{ parameters.GithubPRClosed.pull_request.url }}'
     pool:
       vmImage: 'ubuntu-latest'
     steps:
@@ -106,9 +103,11 @@ jobs:
         scriptPath: scripts/delete-helm-release-on-pr-closure.sh
         arguments: ss-dev-01-rg ss-dev-01-aks $(namespace) $(release_name)
 
-  - job: remove_pr_image_policy
+  - job: remove_pr_image_policy_and_tags
     dependsOn: fetch_pr_labels
     variables:
+      release_name_label: $[ dependencies.fetch_pr_labels.outputs['prLabelReader.release_name_label'] ]
+      pr_url: '${{ parameters.GithubPRClosed.pull_request.url }}'
       release_name: $[ dependencies.fetch_pr_labels.outputs['prLabelReader.release_name'] ]
       product: $[ dependencies.fetch_pr_labels.outputs['prLabelReader.product'] ]
     pool:
@@ -133,3 +132,17 @@ jobs:
         inputs:
           filePath: cnp-pr-cleanup-aks/scripts/fix-image-policies.sh
           arguments: $(release_name) $(product) $(github-management-api-token) sds-flux-config
+      - task: Bash@3
+        # Added here to make use of existing github token in job
+        displayName: 'Remove tag from closed PR'
+        inputs:
+          targetType: inline
+          script: |
+            repo_url="${$(pr_url)%/*/*}"
+
+            curl -L \
+              -X DELETE \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer $(github-management-api-token)"\
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              $(repo_url)/labels/$(release_name_label)
