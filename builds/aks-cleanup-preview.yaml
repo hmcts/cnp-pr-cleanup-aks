@@ -138,11 +138,13 @@ jobs:
         inputs:
           targetType: inline
           script: |
-            repo_url="${$(pr_url)%/*/*}"
+            repo_url=$(echo "${$(pr_url)%/*/*}")
+            release_name_label=$(release_name_label)
+            echo "Deleting ${release_name_label} label"
 
             curl -L \
               -X DELETE \
               -H "Accept: application/vnd.github+json" \
               -H "Authorization: Bearer $(github-management-api-token)"\
               -H "X-GitHub-Api-Version: 2022-11-28" \
-              $(repo_url)/labels/$(release_name_label)
+              ${repo_url}/labels/${release_name_label}
