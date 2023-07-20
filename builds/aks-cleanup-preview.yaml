@@ -48,6 +48,7 @@ jobs:
 
   - job: untag_acr_image
     dependsOn: fetch_pr_labels
+    condition: ne(dependencies.fetch_pr_labels.outputs['prLabelReader.release_name'], 'null')
     variables:
       release_name: $[ dependencies.fetch_pr_labels.outputs['prLabelReader.release_name'] ]
       product: $[ dependencies.fetch_pr_labels.outputs['prLabelReader.product'] ]
@@ -64,6 +65,7 @@ jobs:
         arguments: $(release_name) $(product) $(containerRegistry)
 
   - job: delete_helm_release
+    condition: ne(dependencies.fetch_pr_labels.outputs['prLabelReader.release_name'], 'null')
     dependsOn: fetch_pr_labels
     variables:
       release_name: $[ dependencies.fetch_pr_labels.outputs['prLabelReader.release_name'] ]
@@ -107,6 +109,7 @@ jobs:
         arguments: ss-dev-01-rg ss-dev-01-aks $(namespace) $(release_name)
 
   - job: remove_pr_image_policy_and_tags
+    condition: ne(dependencies.fetch_pr_labels.outputs['prLabelReader.release_name'], 'null')
     dependsOn: fetch_pr_labels
     variables:
       release_name_label: $[ dependencies.fetch_pr_labels.outputs['prLabelReader.release_name_label'] ]
