@@ -8,7 +8,7 @@ GIT_TOKEN=${3}
 REPO_URL=$(echo "${PR_API_URL%/*/*}")
 
 if [[ -z "$RELEASE_NAME_LABEL" || -z "$PR_API_URL" || -z "$GIT_TOKEN" ]]; then
-    echo "Variables are not set - PR potentiall had no labels. Skipping..."
+    echo "Variables are not set - PR potentially had no labels. Skipping..."
 else
     curl -i -L \
         -X DELETE \
