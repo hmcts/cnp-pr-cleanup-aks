@@ -25,6 +25,8 @@ if ($labels -ne "") {
             $namespace = Split-Label $labelName
         }
         if ($labelName.StartsWith("rel:")) {
+            Write-Host "##vso[task.setvariable variable=release_name_label;isOutput=true]$labelName"
+            Write-Output "Release Name Label: $labelName"
             $releaseName = Split-Label $labelName
         }
         if ($labelName.StartsWith("prd:")) {

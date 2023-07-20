@@ -109,6 +109,8 @@ jobs:
   - job: remove_pr_image_policy
     dependsOn: fetch_pr_labels
     variables:
+      release_name_label: $[ dependencies.fetch_pr_labels.outputs['prLabelReader.release_name_label'] ]
+      pr_url: '${{ parameters.GithubPRClosed.pull_request.url }}'
       release_name: $[ dependencies.fetch_pr_labels.outputs['prLabelReader.release_name'] ]
       product: $[ dependencies.fetch_pr_labels.outputs['prLabelReader.product'] ]
     pool:
