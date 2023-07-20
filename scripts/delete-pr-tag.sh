@@ -8,7 +8,7 @@ GIT_TOKEN=${3}
 REPO_URL=$(echo "${PR_API_URL%/*/*}")
 echo "Deleting ${RELEASE_NAME_LABEL} label"
 
-curl -L \
+curl -i -L \
     -X DELETE \
     -H "Accept: application/vnd.github+json" \
     -H "Authorization: Bearer ${GIT_TOKEN}"\

@@ -106,7 +106,7 @@ jobs:
         scriptPath: scripts/delete-helm-release-on-pr-closure.sh
         arguments: ss-dev-01-rg ss-dev-01-aks $(namespace) $(release_name)
 
-  - job: remove_pr_image_policy
+  - job: remove_pr_image_policy_and_tags
     dependsOn: fetch_pr_labels
     variables:
       release_name_label: $[ dependencies.fetch_pr_labels.outputs['prLabelReader.release_name_label'] ]
