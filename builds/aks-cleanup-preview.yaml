@@ -145,4 +145,4 @@ jobs:
               -H "Accept: application/vnd.github+json" \
               -H "Authorization: Bearer $(github-management-api-token)"\
               -H "X-GitHub-Api-Version: 2022-11-28" \
-              $(pr_url)/labels/$(release_name_label)
+              $(repo_url)/labels/$(release_name_label)
