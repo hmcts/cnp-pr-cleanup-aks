@@ -25,8 +25,6 @@ if ($labels -ne "") {
             $namespace = Split-Label $labelName
         }
         if ($labelName.StartsWith("rel:")) {
-            # Full label set here to be deleted in next job
-            Write-Host "##vso[task.setvariable variable=release_name_label;isOutput=true]$labelName"
             $releaseName = Split-Label $labelName
         }
         if ($labelName.StartsWith("prd:")) {
