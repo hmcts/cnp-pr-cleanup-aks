@@ -133,3 +133,8 @@ jobs:
         inputs:
           filePath: cnp-pr-cleanup-aks/scripts/fix-image-policies.sh
           arguments: $(release_name) $(product) $(github-management-api-token) sds-flux-config
+      - task: Bash@3
+        displayName: 'Remove tag from closed PR'
+        inputs:
+          filePath: cnp-pr-cleanup-aks/scripts/delete-pr-tag.sh
+          arguments: $(release_name_label) $(pr_url) $(github-management-api-token)
