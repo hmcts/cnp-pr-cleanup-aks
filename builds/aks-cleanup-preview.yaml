@@ -4,10 +4,8 @@ trigger: none
 pr: none
 variables:
   connectionType: 'Azure Resource Manager'
-  containerRegistry: 'hmctspublic'  # hmctssandbox
   helmVersion: '3.2.4'
-  azureSubscription: DCD-CFTAPPS-DEV  # azurerm-sandbox
-  registrySubscription: azurerm-prod
+  azureSubscription: DCD-CFTAPPS-DEV
 
 resources:
   webhooks:
@@ -49,6 +47,21 @@ jobs:
   - job: untag_acr_image
     dependsOn: fetch_pr_labels
     condition: ne(dependencies.fetch_pr_labels.outputs['prLabelReader.release_name'], '')
+    # Matrix strategy to run against multiple ACRs in parallel
+    strategy:
+      matrix:
+        hmctspublic:
+          containerRegistry: 'hmctspublic'
+          registrySubscription: 'DCD-CNP-Prod'
+        hmctssandbox:
+          containerRegistry: 'hmctssandbox'
+          registrySubscription: 'DCD-CFT-Sandbox'
+        acr1:
+          containerRegistry: 'hmctssbox'
+          registrySubscription: 'DCD-CFT-Sandbox'
+        acr2:
+          containerRegistry: 'hmctsprod'
+          registrySubscription: 'DCD-CNP-Prod'
     variables:
       release_name: $[ dependencies.fetch_pr_labels.outputs['prLabelReader.release_name'] ]
       product: $[ dependencies.fetch_pr_labels.outputs['prLabelReader.product'] ]
@@ -56,7 +69,7 @@ jobs:
       vmImage: 'ubuntu-latest'
     steps:
     - task: AzureCLI@1
-      displayName: 'Untag ACR image'
+      displayName: 'Untag ACR image from $(containerRegistry)'
       enabled: true
       inputs:
         azureSubscription: $(registrySubscription)
