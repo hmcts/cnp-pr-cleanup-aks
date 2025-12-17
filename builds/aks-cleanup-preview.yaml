@@ -4,10 +4,11 @@ trigger: none
 pr: none
 variables:
   connectionType: 'Azure Resource Manager'
-  containerRegistry: 'hmctspublic'
+  containerRegistry: 'hmctspublic'  # hmctssandbox
   helmVersion: '3.2.4'
-  azureSubscription: DCD-CFTAPPS-DEV
-  registrySubscription: DCD-CFTAPPS-DEV
+  azureSubscription: DCD-CFTAPPS-DEV  # azurerm-sandbox
+  registrySubscription: azurerm-prod
+
 
 resources:
   webhooks:
@@ -56,7 +57,7 @@ jobs:
       vmImage: 'ubuntu-latest'
     steps:
     - task: AzureCLI@1
-      displayName: 'Untag ACR images'
+      displayName: 'Untag ACR image'
       enabled: true
       inputs:
         azureSubscription: $(registrySubscription)
