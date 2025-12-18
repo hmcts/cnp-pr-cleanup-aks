@@ -4,10 +4,11 @@ trigger: none
 pr: none
 variables:
   connectionType: 'Azure Resource Manager'
-  containerRegistry: 'hmctspublic'  # hmctssandbox
+  containerRegistries: 'hmctspublic hmctsprod'
   helmVersion: '3.2.4'
   azureSubscription: DCD-CFTAPPS-DEV  # azurerm-sandbox
   registrySubscription: azurerm-prod
+
 
 resources:
   webhooks:
@@ -62,7 +63,7 @@ jobs:
         azureSubscription: $(registrySubscription)
         scriptLocation: scriptPath
         scriptPath: scripts/untag-acr-image.sh
-        arguments: $(release_name) $(product) $(containerRegistry)
+        arguments: $(release_name) $(product) "$(containerRegistries)"
 
   - job: delete_helm_release
     condition: ne(dependencies.fetch_pr_labels.outputs['prLabelReader.release_name'], '')
