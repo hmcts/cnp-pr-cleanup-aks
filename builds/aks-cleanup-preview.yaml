@@ -8,7 +8,9 @@ variables:
   helmVersion: '3.2.4'
   azureSubscription: DCD-CFTAPPS-DEV  # azurerm-sandbox
   registrySubscription: azurerm-prod
-
+  sandboxSubscription: DCD-CFT-Sandbox
+  acrProd: hmctsprod
+  acrSandbox: hmctssbox
 
 resources:
   webhooks:
@@ -64,6 +66,33 @@ jobs:
         scriptLocation: scriptPath
         scriptPath: scripts/untag-acr-image.sh
         arguments: $(release_name) $(product) "$(containerRegistries)"
+
+  - job: delete_acr_task
+    dependsOn: fetch_pr_labels
+    condition: ne(dependencies.fetch_pr_labels.outputs['prLabelReader.release_name'], '')
+    variables:
+      release_name: $[ dependencies.fetch_pr_labels.outputs['prLabelReader.release_name'] ]
+      product: $[ dependencies.fetch_pr_labels.outputs['prLabelReader.product'] ]
+      pr_number: '${{ parameters.GithubPRClosed.pull_request.number }}'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: AzureCLI@1
+      displayName: 'Delete ACR Task from $(acrProd)'
+      enabled: true
+      inputs:
+        azureSubscription: $(registrySubscription)
+        scriptLocation: scriptPath
+        scriptPath: scripts/delete-acr-task.sh
+        arguments: $(release_name) $(product) $(pr_number) "$(acrProd)"
+    - task: AzureCLI@1
+      displayName: 'Delete ACR Task from $(acrSandbox)'
+      enabled: true
+      inputs:
+        azureSubscription: $(sandboxSubscription)
+        scriptLocation: scriptPath
+        scriptPath: scripts/delete-acr-task.sh
+        arguments: $(release_name) $(product) $(pr_number) "$(acrSandbox)"
 
   - job: delete_helm_release
     condition: ne(dependencies.fetch_pr_labels.outputs['prLabelReader.release_name'], '')
